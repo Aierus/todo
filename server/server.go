@@ -1,11 +1,10 @@
-package server
+package main
 
 import (
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"project/controller"
 )
 
 func initServer(w http.ResponseWriter, r *http.Request) {
@@ -17,17 +16,17 @@ func initServer(w http.ResponseWriter, r *http.Request) {
 
 func initTodos(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Handling a request to /todo\n")
-	initTodo := controller.CreateJsonTodoList("A Task", "A Description")
-	anotherTodo := controller.CreateJsonTodoList("Another Task", "Another Description")
-	w.Write(initTodo)
-	w.Write(anotherTodo)
+	// initTodo := controller.CreateJsonTodoList("A Task", "A Description")
+	// anotherTodo := controller.CreateJsonTodoList("Another Task", "Another Description")
+	// w.Write(initTodo)
+	// w.Write(anotherTodo)
 }
 
 func initApi(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Initializing API endpoint \n")
 }
 
-func Server() {
+func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", initServer)    // root and homepage
 	mux.HandleFunc("/todo", initTodos) // Where todo json data is stored

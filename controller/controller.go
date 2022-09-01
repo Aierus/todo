@@ -13,24 +13,22 @@ import (
 
 // CRUD Create, Read (done), Update, Delete
 
-func CreateJsonTodoList(title string, description string) []byte {
-	i := 0
+func CreateJsonTodoList(title string, description string, listID int) []byte {
 	data := &model.TodoList{
 		Title:       title,
 		Description: description,
 		Done:        false,
 		CurrentTime: time.Now(),
-		ListID:      i,
+		ListID:      listID,
 	}
-	i = i + 1
 	jsonData, _ := json.Marshal(data)
 	// fmt.Printf("jsonData: %s\n", jsonData)
 	return jsonData
 }
 
-func CreateTodo(title string, description string) {
-	data := CreateJsonTodoList(title, description)
-	resp, err := http.Post("http://localhost:8080", "application/json", bytes.NewBuffer(data))
+func CreateTodo(title string, description string, listID int) {
+	data := CreateJsonTodoList(title, description, listID)
+	resp, err := http.NewRequest("POST", "http://localhost:8080/todo", bytes.NewBuffer(data))
 	if err != nil {
 		fmt.Printf("Error with POST request to /todo\n")
 		panic(err)
@@ -68,13 +66,54 @@ func ReadTodo() []model.TodoList {
 	// fmt.Printf("All Todos = %+v\n", todos)
 }
 
-func UpdateTodo(ListID int) {
+func UpdateTodo(title string, description string, done bool, ListID int) {
 	todos := ReadTodo()
+	var todo model.TodoList
+	for _, v := range todos {
+		if v.ListID == ListID {
+			todo = v
+			// fmt.Printf("%+v\n", todo)
+		}
+	}
+	// reconstruct json
+	todo.Title = title
+	todo.Description = description
+	todo.Done = done
+	todo.CurrentTime = time.Now()
+	todo.ListID = ListID
+	// marshal params
+	updatedTodo, _ := json.Marshal(todo)
+	// Delete previous json object
+	DeleteTodo(ListID)
+	// send back to server
+	resp, err := http.NewRequest("POST", "http://localhost:8080/todo", bytes.NewBuffer(updatedTodo))
+	if err != nil {
+		fmt.Printf("Error updating todo with ListID %d\n", ListID)
+		panic(err)
+	}
+	defer resp.Body.Close()
 	fmt.Printf("%+v\n", todos)
 }
 
+// Remove Todo w/ ListID "ListID "from todos
 func DeleteTodo(ListID int) {
 	todos := ReadTodo()
+	for _, v := range todos {
+		if v.ListID == ListID {
+			v = model.TodoList{}
+			emptyTodoList, err := json.Marshal(v)
+			if err != nil {
+				fmt.Printf("Error marshalling empty todoList")
+				panic(err)
+			}
+			resp, err := http.NewRequest("POST", "http://localhost:8080/todo", bytes.NewBuffer(emptyTodoList))
+			if err != nil {
+				fmt.Printf("Error deleting todo with ListID %d", ListID)
+				panic(err)
+			}
+			defer resp.Body.Close()
+		}
+	}
 	fmt.Printf("%+v\n", todos)
 }
 

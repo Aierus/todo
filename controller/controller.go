@@ -26,9 +26,11 @@ func CreateJsonTodoList(title string, description string, listID int) []byte {
 	return jsonData
 }
 
-func CreateTodo(title string, description string, listID int) {
+func CreateTodo(title string, description string, listID int) []byte {
 	data := CreateJsonTodoList(title, description, listID)
-	resp, err := http.NewRequest("POST", "http://localhost:8080/todo", bytes.NewBuffer(data))
+	// resp, err := http.NewRequest("POST", "http://localhost:8080/", bytes.NewBuffer(data))
+	resp, err := http.Post("http://localhost:8080/", "application/json", bytes.NewBuffer(data))
+	fmt.Printf("response from POST request == %v", resp)
 	if err != nil {
 		fmt.Printf("Error with POST request to /todo\n")
 		panic(err)
@@ -39,14 +41,15 @@ func CreateTodo(title string, description string, listID int) {
 		fmt.Printf("Error\n")
 		panic(err)
 	}
-	fmt.Println(string(body))
+	return body
+	// fmt.Println(string(body))
 }
 
 func ReadTodo() []model.TodoList {
 	var todos []model.TodoList
-	resp, err := http.Get("http://localhost:8080/todo")
+	resp, err := http.Get("http://localhost:8080/")
 	if err != nil {
-		fmt.Printf("Error with GET request to /todo\n")
+		fmt.Printf("Error with GET request to /\n")
 		panic(err)
 	}
 	decoder := json.NewDecoder(resp.Body)
@@ -70,12 +73,13 @@ func UpdateTodo(title string, description string, done bool, ListID int) {
 	todos := ReadTodo()
 	var todo model.TodoList
 	for _, v := range todos {
+		fmt.Printf("v.ListID == %d", v.ListID)
 		if v.ListID == ListID {
 			todo = v
-			// fmt.Printf("%+v\n", todo)
+			fmt.Printf("the todo that the for loop grabs is == %+v\n", todo)
 		}
 	}
-	// reconstruct json
+	// reconstruct TodoList with new values
 	todo.Title = title
 	todo.Description = description
 	todo.Done = done
@@ -84,9 +88,9 @@ func UpdateTodo(title string, description string, done bool, ListID int) {
 	// marshal params
 	updatedTodo, _ := json.Marshal(todo)
 	// Delete previous json object
-	DeleteTodo(ListID)
+	// DeleteTodo(ListID)
 	// send back to server
-	resp, err := http.NewRequest("POST", "http://localhost:8080/todo", bytes.NewBuffer(updatedTodo))
+	resp, err := http.NewRequest("POST", "http://localhost:8080/", bytes.NewBuffer(updatedTodo))
 	if err != nil {
 		fmt.Printf("Error updating todo with ListID %d\n", ListID)
 		panic(err)
@@ -106,7 +110,7 @@ func DeleteTodo(ListID int) {
 				fmt.Printf("Error marshalling empty todoList")
 				panic(err)
 			}
-			resp, err := http.NewRequest("POST", "http://localhost:8080/todo", bytes.NewBuffer(emptyTodoList))
+			resp, err := http.NewRequest("POST", "http://localhost:8080/", bytes.NewBuffer(emptyTodoList))
 			if err != nil {
 				fmt.Printf("Error deleting todo with ListID %d", ListID)
 				panic(err)

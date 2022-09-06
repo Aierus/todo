@@ -26,28 +26,32 @@ func CreateJsonTodoList(title string, description string, listID int) []byte {
 	return jsonData
 }
 
-func CreateTodo(title string, description string, listID int) []byte {
+func CreateTodo(title string, description string, listID int) model.TodoList {
+	var todoObject model.TodoList
 	data := CreateJsonTodoList(title, description, listID)
-	// resp, err := http.NewRequest("POST", "http://localhost:8080/", bytes.NewBuffer(data))
-	resp, err := http.Post("http://localhost:8080/", "application/json", bytes.NewBuffer(data))
+	payload := bytes.NewBuffer(data)
+	// resp, err := http.NewRequest("POST", "http://localhost:8080/todo", payload)
+	// fmt.Printf("in controller.go bytes.NewBuffer(data) == %v", payload)
+	resp, err := http.Post("http://localhost:8080/todo", "application/json", payload)
 	fmt.Printf("response from POST request == %v", resp)
 	if err != nil {
 		fmt.Printf("Error with POST request to /todo\n")
 		panic(err)
 	}
-	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(body, &todoObject)
 	if err != nil {
 		fmt.Printf("Error\n")
 		panic(err)
 	}
-	return body
+	fmt.Printf("in controller.go the return value is == %+v\n", todoObject)
+	return todoObject
 	// fmt.Println(string(body))
 }
 
 func ReadTodo() []model.TodoList {
 	var todos []model.TodoList
-	resp, err := http.Get("http://localhost:8080/")
+	resp, err := http.Get("http://localhost:8080/todo")
 	if err != nil {
 		fmt.Printf("Error with GET request to /\n")
 		panic(err)
@@ -90,7 +94,7 @@ func UpdateTodo(title string, description string, done bool, ListID int) {
 	// Delete previous json object
 	// DeleteTodo(ListID)
 	// send back to server
-	resp, err := http.NewRequest("POST", "http://localhost:8080/", bytes.NewBuffer(updatedTodo))
+	resp, err := http.NewRequest("POST", "http://localhost:8080/todo", bytes.NewBuffer(updatedTodo))
 	if err != nil {
 		fmt.Printf("Error updating todo with ListID %d\n", ListID)
 		panic(err)
@@ -110,7 +114,7 @@ func DeleteTodo(ListID int) {
 				fmt.Printf("Error marshalling empty todoList")
 				panic(err)
 			}
-			resp, err := http.NewRequest("POST", "http://localhost:8080/", bytes.NewBuffer(emptyTodoList))
+			resp, err := http.NewRequest("POST", "http://localhost:8080/todo", bytes.NewBuffer(emptyTodoList))
 			if err != nil {
 				fmt.Printf("Error deleting todo with ListID %d", ListID)
 				panic(err)
